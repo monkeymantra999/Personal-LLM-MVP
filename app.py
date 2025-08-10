@@ -2,6 +2,16 @@ import os, json, streamlit as st
 from engine import Retriever, analyze
 from prompts import SYSTEM_PROMPT, OPINION_PROMPT, CRITIQUE_PROMPT
 
+# Auto-load Streamlit secrets if present
+try:
+    import streamlit as st
+    if "OPENAI_API_KEY" in st.secrets:
+        os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    if "REASONING_MODEL" in st.secrets:
+        os.environ["REASONING_MODEL"] = st.secrets["REASONING_MODEL"]
+except Exception:
+    pass
+
 st.set_page_config(page_title="Gerard Reasoning Engine", layout="wide")
 
 st.title("Gerard Reasoning Engine — MVP")
