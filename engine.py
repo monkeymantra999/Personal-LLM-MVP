@@ -1,6 +1,6 @@
 import os, json
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 import tiktoken
 from openai import OpenAI
@@ -72,7 +72,10 @@ class Retriever:
         idx = np.argsort(-scores)[:top_k]
         return [(self.snippets[i], float(scores[i])) for i in idx]
 
-def build_context(snippets: List[Tuple[Snippet,float]], extra_docs: List[Dict[str,str]]|None=None) -> str:
+def build_context(
+    snippets: List[Tuple[Snippet, float]],
+    extra_docs: Optional[List[Dict[str, str]]] = None
+) -> str:
     blocks = []
     for s,score in snippets:
         blocks.append(f"[source_id:{s.id}] PACK:{s.pack} TITLE:{s.meta.get('title')} SUB:{s.meta.get('subtopic')} WEIGHT:{s.weight:.2f}\n{s.text}")
@@ -90,7 +93,14 @@ def call_llm(client: OpenAI, system: str, user: str) -> str:
     )
     return resp.choices[0].message.content
 
-def analyze(query: str, retriever: Retriever, system_prompt: str, opinion_prompt: str, critique_prompt: str, pasted_text: str|None=None):
+def analyze(
+    query: str,
+    retriever: Retriever,
+    system_prompt: str,
+    opinion_prompt: str,
+    critique_prompt: str,
+    pasted_text: Optional[str] = None
+):
     client = retriever.client
     hits = retriever.retrieve(query, top_k=12)
     extra = [{"id":"user:pasted","title":"User Pasted","text":pasted_text}] if pasted_text else None
