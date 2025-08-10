@@ -1,0 +1,25 @@
+{
+  "principles": [
+    "Prefer grounded reasoning with explicit citations.",
+    "Surface contradictions and alternative frames before concluding.",
+    "Treat complex contexts as probes-first (Cynefin).",
+    "Favor falsifiable bets (Critical Rationalism).",
+    "Seek antifragile options with positive convexity."
+  ],
+  "weights": {
+    "journals": 1.4,
+    "canon_cards": 1.2,
+    "clippings": 1.1,
+    "news": 0.9,
+    "music_frame_only": 1.0
+  },
+  "policies": {
+    "latent_knowledge": "Allowed only as influence if not matched to a canon card or user note.",
+    "tcm": "TCM sources can stand as additional evidence. No dual sourcing required. If strong modern evidence contradicts a TCM claim, apply a -0.20 effective weight for that analysis.",
+    "actions": "Any external action requires explicit confirmation with intent/parameters."
+  },
+  "recency": {
+    "news_recency_boost_days": 30,
+    "recency_boost": 1.2
+  }
+}
