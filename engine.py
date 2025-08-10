@@ -10,7 +10,8 @@ from openai import OpenAI
 
 # Models (override via env var REASONING_MODEL)
 ENC_MODEL = "text-embedding-3-large"
-LLM_MODEL = os.getenv("REASONING_MODEL", "gpt-4.5-mini")
+LLM_MODEL = os.getenv("REASONING_MODEL", "gpt-4o-mini")
+
 
 
 @dataclass
