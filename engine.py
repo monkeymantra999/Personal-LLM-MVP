@@ -8,7 +8,7 @@ import numpy as np
 import tiktoken
 from openai import OpenAI
 
-# Models (override in Streamlit sidebar / env)
+# Models (override via env var REASONING_MODEL)
 ENC_MODEL = "text-embedding-3-large"
 LLM_MODEL = os.getenv("REASONING_MODEL", "gpt-4.5-mini")
 
@@ -61,7 +61,6 @@ class Retriever:
                 add("IMPLICATIONS", card.get("implications"))
                 add("FALSIFIERS", card.get("falsifiers"))
 
-                # Safe, multi-line f-string (prevents unterminated literal issues)
                 header = (
                     f"{card.get('title', '')} — {card.get('author', '')} | "
                     f"{card.get('pack', '')} | {card.get('subtopic', '')}\n"
@@ -98,7 +97,7 @@ class Retriever:
     def retrieve(self, query: str, top_k: int = 12) -> List[Tuple[Snippet, float]]:
         self.ensure_index()
         q = self._embed([query])[0]  # (dim,)
-        sims = (self.embeddings @ q).flatten()  # cosine similarities (because normalized)
+        sims = (self.embeddings @ q).flatten()  # cosine similarities (normalized vectors)
         weights = np.array([s.weight for s in self.snippets], dtype=np.float32)
         scores = sims * weights
         idx = np.argsort(-scores)[:top_k]
@@ -118,5 +117,48 @@ def build_context(
     if extra_docs:
         for d in extra_docs:
             sid = d.get("id", f"extra:{abs(hash(d.get('text','')))}")
+            title = d.get("title", "External")
+            text = d.get("text", "")
             blocks.append(
-                f"[source_id:{sid}] PACK:external TITLE:{d.get('_]()
+                f"[source_id:{sid}] PACK:external TITLE:{title} SUB:None WEIGHT:1.00\n{text}"
+            )
+    return "\n\n----\n\n".join(blocks)
+
+
+def call_llm(client: OpenAI, system: str, user: str) -> str:
+    # OpenAI v1.x Chat Completions
+    resp = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=0.3,
+    )
+    return resp.choices[0].message.content
+
+
+def analyze(
+    query: str,
+    retriever: Retriever,
+    system_prompt: str,
+    opinion_prompt: str,
+    critique_prompt: str,
+    pasted_text: Optional[str] = None,
+):
+    client = retriever.client
+    hits = retriever.retrieve(query, top_k=12)
+    extra = [{"id": "user:pasted", "title": "User Pasted", "text": pasted_text}] if pasted_text else None
+    context = build_context(hits, extra_docs=extra)
+
+    opinion = call_llm(
+        client,
+        system_prompt,
+        f"{opinion_prompt}\n\nQUERY:\n{query}\n\nCONTEXT:\n{context}",
+    )
+    critique = call_llm(
+        client,
+        system_prompt,
+        f"{critique_prompt}\n\nQUERY:\n{query}\n\nCONTEXT:\n{context}\n\nPRIOR_OPINION:\n{opinion}",
+    )
+    return opinion, critique, context
