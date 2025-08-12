@@ -64,6 +64,12 @@ MODES = {
             "18_sensemaking_cynefin": 1.1,
         },
     },
+    "Integral": {
+    "top_k": 16,
+    "prompt_opinion": OPINION_PROMPT,
+    "prompt_critique": CRITIQUE_PROMPT,
+    "pack_bias": {},  # no extra weighting: use the canon as-is
+},
 }
 
 # ---------- Helpers ----------
