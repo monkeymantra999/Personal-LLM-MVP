@@ -12,8 +12,6 @@ from openai import OpenAI
 ENC_MODEL = "text-embedding-3-large"
 LLM_MODEL = os.getenv("REASONING_MODEL", "gpt-4o-mini")
 
-
-
 @dataclass
 class Snippet:
     id: str
@@ -22,10 +20,9 @@ class Snippet:
     text: str
     meta: Dict[str, Any]
 
-
 class Retriever:
     def __init__(self, canon_path: str):
-        # OPENAI_API_KEY must be set in env (Streamlit sidebar sets it)
+        # OPENAI_API_KEY must be set in env (Streamlit sidebar or secrets)
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.encoder = tiktoken.get_encoding("cl100k_base")
         self.snippets: List[Snippet] = self._load_cards(canon_path)
@@ -62,8 +59,9 @@ class Retriever:
                 add("IMPLICATIONS", card.get("implications"))
                 add("FALSIFIERS", card.get("falsifiers"))
 
+                # Keep ASCII-only to avoid platform parsing weirdness
                 header = (
-                    f"{card.get('title', '')} — {card.get('author', '')} | "
+                    f"{card.get('title', '')} - {card.get('author', '')} | "
                     f"{card.get('pack', '')} | {card.get('subtopic', '')}\n"
                 )
                 text = header + "\n".join([b for b in body if b])
@@ -98,12 +96,11 @@ class Retriever:
     def retrieve(self, query: str, top_k: int = 12) -> List[Tuple[Snippet, float]]:
         self.ensure_index()
         q = self._embed([query])[0]  # (dim,)
-        sims = (self.embeddings @ q).flatten()  # cosine similarities (normalized vectors)
+        sims = (self.embeddings @ q).flatten()  # cosine similarities (normalized)
         weights = np.array([s.weight for s in self.snippets], dtype=np.float32)
         scores = sims * weights
         idx = np.argsort(-scores)[:top_k]
         return [(self.snippets[i], float(scores[i])) for i in idx]
-
 
 def build_context(
     snippets: List[Tuple[Snippet, float]],
@@ -125,7 +122,6 @@ def build_context(
             )
     return "\n\n----\n\n".join(blocks)
 
-
 def call_llm(client: OpenAI, system: str, user: str) -> str:
     # OpenAI v1.x Chat Completions
     resp = client.chat.completions.create(
@@ -137,7 +133,6 @@ def call_llm(client: OpenAI, system: str, user: str) -> str:
         temperature=0.3,
     )
     return resp.choices[0].message.content
-
 
 def analyze(
     query: str,
