@@ -9,7 +9,7 @@ if "OPENAI_API_KEY" in st.secrets:
 if "REASONING_MODEL" in st.secrets:
     os.environ["REASONING_MODEL"] = st.secrets["REASONING_MODEL"]
 
-st.set_page_config(page_title="Gerard Reasoning Engine — MVP", layout="wide")
+st.set_page_config(page_title="Gerard's Reasoning Engine — MVP", layout="wide")
 st.title("Gerard Reasoning Engine")
 st.caption("Grounded opinions + adversarial critique using your canon cards, with persistent history.")
 
